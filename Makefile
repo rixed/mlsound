@@ -5,8 +5,8 @@ REQUIRES = pfds
 
 include make.common
 
-all: mlsound
-opt: $(XARCHIVE)
+all: mlsound synth.byte
+opt: $(XARCHIVE) synth.opt
 check: $(ARCHIVE) $(XARCHIVE)
 
 clean-spec:
@@ -21,4 +21,11 @@ libhelper.a: helper.o
 
 mlsound: libhelper.a $(ARCHIVE)
 	$(OCAMLMKTOP) -package "$(REQUIRES)" -o $@ -ccopt libhelper.a -rectypes -custom unix.cma $(ARCHIVE)
+
+synth.byte: mlsound.cma synth.cmo
+	$(OCAMLC)   -o $@ -package "$(REQUIRES)" -linkpkg $(OCAMLFLAGS) -ccopt libhelper.a unix.cma $^
+
+synth.opt: mlsound.cmxa synth.cmx
+	$(OCAMLOPT) -o $@ -package "$(REQUIRES)" -linkpkg $(OCAMLOPTFLAGS) -ccopt libhelper.a unix.cmxa $^
+
 

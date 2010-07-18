@@ -8,7 +8,7 @@ override OCAMLOPTFLAGS += $(INCS) -w Ael -g -rectypes
 override OCAMLFLAGS    += $(INCS) -w Ael -g -rectypes -custom
 
 CPPFLAGS += -I $(CAMLINCLUDE)
-CFLAGS += -std=c99 -W -Wall
+CFLAGS += -std=c99 -W -Wall -O
 
 all:
 
@@ -34,12 +34,6 @@ endif
 # Common rules
 .SUFFIXES: .ml .mli .cmo .cmi .cmx .opt .byte
 
-.cmo.byte:
-	$(OCAMLC)   -o $@ -package "$(REQUIRES)" -linkpkg $(OCAMLFLAGS) $^
-
-.cmx.opt:
-	$(OCAMLOPT) -o $@ -package "$(REQUIRES)" -linkpkg $(OCAMLOPTFLAGS) $^
-
 .ml.cmo:
 	$(OCAMLC) -package "$(REQUIRES)" $(OCAMLFLAGS) -c $<
 
@@ -54,8 +48,9 @@ clean: clean-spec
 	rm -f *.cm[ioxa] *.cmxa *.a *.s *.o *.byte *.opt .depend
 
 # Dependencies
-.depend: *.ml
+.depend: *.ml *.c
 	$(OCAMLDEP) -package "$(REQUIRES)" -I .. $^ > $@
+	$(CC) -M $(CPPFLAGS) *.c >> $@
 
 doc: $(wildcard *.ml)
 	mkdir -p $@
