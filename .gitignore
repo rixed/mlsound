@@ -1,0 +1,16 @@
+init.cmo: mlsound.cmo 
+init.cmx: mlsound.cmx 
+mlsound.cmo: 
+mlsound.cmx: 
+helper.o
+libhelper.a
+mlsound.cma
+mlsound.cmi
+mlsound.cmo
+mlsound
+.depend
+*.o
+*.a
+*.cma
+*.cmo
+*.cmx*

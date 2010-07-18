@@ -1,0 +1,64 @@
+OCAMLC     = OCAMLPATH=$(top_srcdir)/.. ocamlfind ocamlc
+OCAMLOPT   = OCAMLPATH=$(top_srcdir)/.. ocamlfind ocamlopt
+OCAMLDEP   = OCAMLPATH=$(top_srcdir)/.. ocamlfind ocamldep
+OCAMLDOC   = OCAMLPATH=$(top_srcdir)/.. ocamlfind ocamldoc -rectypes -keep-code -html -all-params -colorize-code
+OCAMLMKTOP = OCAMLPATH=$(top_srcdir)/.. ocamlfind ocamlmktop
+CAMLINCLUDE = $(shell ocamlfind printconf stdlib)
+override OCAMLOPTFLAGS += $(INCS) -w Ael -g -rectypes
+override OCAMLFLAGS    += $(INCS) -w Ael -g -rectypes -custom
+
+CPPFLAGS += -I $(CAMLINCLUDE)
+CFLAGS += -std=c99 -W -Wall
+
+all:
+
+.PHONY: all opt clean clean-spec check install uninstall reinstall doc
+
+ifdef PKG_NAME
+OBJECTS  = $(SOURCES:.ml=.cmo)
+XOBJECTS = $(OBJECTS:.cmo=.cmx)
+ARCHIVE  = $(PKG_NAME).cma
+XARCHIVE = $(ARCHIVE:.cma=.cmxa)
+$(ARCHIVE): $(OBJECTS) $(CLIB)
+	$(OCAMLC)   -a -o $@ -package "$(REQUIRES)" -linkpkg $(OCAMLFLAGS) $(OBJECTS)
+$(XARCHIVE): $(XOBJECTS) $(CLIB)
+	$(OCAMLOPT) -a -o $@ -package "$(REQUIRES)" $(OCAMLOPTFLAGS) $(XOBJECTS)
+install: $(ARCHIVE)
+	if test -f "$(XARCHIVE)" ; then extra="$(XARCHIVE) "`basename "$(XARCHIVE)" .cmxa`.a ; fi ; \
+	ocamlfind install "$(PKG_NAME)" *.cmi "$(ARCHIVE)" META $$extra
+uninstall:
+	ocamlfind remove $(PKG_NAME)
+reinstall: uninstall install
+endif
+
+# Common rules
+.SUFFIXES: .ml .mli .cmo .cmi .cmx .opt .byte
+
+.cmo.byte:
+	$(OCAMLC)   -o $@ -package "$(REQUIRES)" -linkpkg $(OCAMLFLAGS) $^
+
+.cmx.opt:
+	$(OCAMLOPT) -o $@ -package "$(REQUIRES)" -linkpkg $(OCAMLOPTFLAGS) $^
+
+.ml.cmo:
+	$(OCAMLC) -package "$(REQUIRES)" $(OCAMLFLAGS) -c $<
+
+.mli.cmi:
+	$(OCAMLC) -package "$(REQUIRES)" $(OCAMLFLAGS) -c $<
+
+.ml.cmx:
+	$(OCAMLOPT) -package "$(REQUIRES)" $(OCAMLOPTFLAGS) -c $<
+
+# Clean up
+clean: clean-spec
+	rm -f *.cm[ioxa] *.cmxa *.a *.s *.o *.byte *.opt .depend
+
+# Dependencies
+.depend: *.ml
+	$(OCAMLDEP) -package "$(REQUIRES)" -I .. $^ > $@
+
+doc: $(wildcard *.ml)
+	mkdir -p $@
+	$(OCAMLDOC) -d doc $^
+
+include .depend
